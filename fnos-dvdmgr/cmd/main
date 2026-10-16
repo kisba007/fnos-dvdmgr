@@ -1,0 +1,113 @@
+#!/bin/bash
+# DVD光驱助手 - 主生命周期脚本
+# 用法: main <start|stop|status>
+#
+# 环境变量由飞牛 fnOS 注入：
+#   TRIM_APPDEST  应用可执行目录（target）
+#   TRIM_PKGVAR   运行时数据目录（var）
+#   TRIM_PKGETC   静态配置目录（etc）
+#   TRIM_TEMP_LOGFILE 系统日志文件（错误写入此文件供前端展示）
+
+PID_FILE="${TRIM_PKGVAR}/dvdmgr.pid"
+DAEMON="${TRIM_APPDEST}/dvdmgr.py"
+
+log_err() {
+    echo "[$(date '+%F %T')] $*" >> "${TRIM_TEMP_LOGFILE:-/tmp/dvdmgr.err}"
+}
+
+# 自动发现 Python 解释器（fnOS 精简系统可能无系统 python3）
+find_python() {
+    if command -v python3 >/dev/null 2>&1; then
+        command -v python3
+        return 0
+    fi
+    for p in /var/apps/python312/target/bin/python3 \
+             /var/apps/python311/target/bin/python3 \
+             /var/apps/python310/target/bin/python3 \
+             /usr/bin/python3 /usr/local/bin/python3; do
+        if [ -x "$p" ]; then
+            echo "$p"
+            return 0
+        fi
+    done
+    return 1
+}
+
+start_daemon() {
+    # 已运行则直接返回
+    if [ -f "$PID_FILE" ]; then
+        pid=$(cat "$PID_FILE" 2>/dev/null | tr -d '[:space:]')
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            exit 0
+        fi
+        rm -f "$PID_FILE"
+    fi
+
+    PYTHON_BIN="$(find_python)"
+    if [ -z "$PYTHON_BIN" ]; then
+        log_err "未找到 Python3 运行时，无法启动守护进程"
+        echo "未找到 Python3 运行时，无法启动守护进程" > "${TRIM_TEMP_LOGFILE:-/tmp/dvdmgr.err}"
+        exit 1
+    fi
+
+    "$PYTHON_BIN" "$DAEMON" --daemon \
+        --pid-file "$PID_FILE" \
+        --var-dir "${TRIM_PKGVAR}" \
+        --etc-dir "${TRIM_PKGETC}" \
+        >> "${TRIM_PKGVAR}/dvdmgr.log" 2>&1 &
+
+    # 等待进程就绪
+    for i in $(seq 1 10); do
+        if [ -f "$PID_FILE" ]; then
+            pid=$(cat "$PID_FILE" 2>/dev/null | tr -d '[:space:]')
+            if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+                exit 0
+            fi
+        fi
+        sleep 0.3
+    done
+
+    log_err "守护进程启动失败"
+    rm -f "$PID_FILE"
+    exit 1
+}
+
+stop_daemon() {
+    if [ -f "$PID_FILE" ]; then
+        pid=$(cat "$PID_FILE" 2>/dev/null | tr -d '[:space:]')
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            kill "$pid" 2>/dev/null
+            # 优雅停止，最多等 5 秒
+            for i in $(seq 1 25); do
+                kill -0 "$pid" 2>/dev/null || break
+                sleep 0.2
+            done
+            kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null
+        fi
+        rm -f "$PID_FILE"
+    fi
+    exit 0
+}
+
+case "$1" in
+    start)
+        start_daemon
+        ;;
+    stop)
+        stop_daemon
+        ;;
+    status)
+        # 运行中返回 0，未运行返回 3
+        if [ -f "$PID_FILE" ]; then
+            pid=$(cat "$PID_FILE" 2>/dev/null | tr -d '[:space:]')
+            if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+                exit 0
+            fi
+            rm -f "$PID_FILE"
+        fi
+        exit 3
+        ;;
+    *)
+        exit 1
+        ;;
+esac

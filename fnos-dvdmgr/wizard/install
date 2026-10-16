@@ -1,0 +1,30 @@
+[
+    {
+        "stepTitle": "安装前说明",
+        "items": [
+            {
+                "type": "tips",
+                "helpText": "DVD光驱助手用于自动识别并管理 USB 光驱：插入 USB 光驱并放入光盘后，将自动挂载（ISO9660/UDF 只读），并提供一个 Web 窗口界面用于查看和管理光驱。"
+            },
+            {
+                "type": "tips",
+                "helpText": "<strong>权限说明：</strong>本应用需要 root 权限并安装到系统分区，用于监听 USB 光驱热插拔、挂载光盘、发送弹出指令。这是管理光驱所必需的。"
+            },
+            {
+                "type": "tips",
+                "helpText": "<strong>安全提示：</strong>管理端口 8085 监听局域网（0.0.0.0），请勿在不可信网络环境中暴露该端口。建议在飞牛防火墙中仅允许可信网段访问。"
+            },
+            {
+                "type": "switch",
+                "field": "wizard_risk_acknowledged",
+                "label": "我已阅读并理解上述说明，接受以 root 权限安装",
+                "rules": [
+                    {
+                        "required": true,
+                        "message": "请先确认已阅读并理解安装说明"
+                    }
+                ]
+            }
+        ]
+    }
+]

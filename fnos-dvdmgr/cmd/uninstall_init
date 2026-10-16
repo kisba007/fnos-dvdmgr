@@ -1,0 +1,17 @@
+#!/bin/bash
+# 卸载初始化：卸载前执行（删除文件之前）
+# 负责：卸载本应用挂载的所有光驱、移除 udev 规则
+
+set -u
+
+DAEMON="${TRIM_APPDEST}/dvdmgr.py"
+if [ -x "$DAEMON" ]; then
+    "$DAEMON" --unmount-all 2>/dev/null || true
+fi
+
+RULES_FILE="/etc/udev/rules.d/99-dvdmgr.rules"
+if [ -f "$RULES_FILE" ]; then
+    rm -f "$RULES_FILE" 2>/dev/null || true
+fi
+udevadm control --reload-rules 2>/dev/null || true
+exit 0

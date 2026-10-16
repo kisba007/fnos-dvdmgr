@@ -1,0 +1,15 @@
+#!/bin/bash
+# 卸载回调：卸载完成后执行
+# 负责：清理空的挂载基目录
+
+set -u
+
+MOUNT_BASE="${DVDMGR_MOUNT_BASE:-/media/dvd}"
+
+# 清理挂载基目录下的空目录
+if [ -d "$MOUNT_BASE" ]; then
+    find "$MOUNT_BASE" -maxdepth 1 -type d -empty -delete 2>/dev/null || true
+fi
+# 若基目录自身已为空则一并移除
+rmdir "$MOUNT_BASE" 2>/dev/null || true
+exit 0

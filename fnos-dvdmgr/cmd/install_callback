@@ -1,0 +1,44 @@
+#!/bin/bash
+# 安装回调：安装完成后执行
+# 负责：创建挂载基目录、写入 udev 规则、生成默认配置、重载 udev
+
+set -u
+
+DAEMON="${TRIM_APPDEST}/dvdmgr.py"
+RULES_FILE="/etc/udev/rules.d/99-dvdmgr.rules"
+
+# 挂载点由守护进程启动时自动探测（优先挂到用户「我的文件」下的 dvdmgr，
+# 无用户目录时回退应用共享目录 / /media/dvd）。此处仅预创建共享目录作为兜底。
+SHARE_BASE="${TRIM_DATA_SHARE_PATHS%%:*}"
+if [ -n "$SHARE_BASE" ]; then
+    mkdir -p "$SHARE_BASE" 2>/dev/null || true
+fi
+
+# 1. 写入 udev 规则（自动识别光驱热插拔事件）
+cat > "$RULES_FILE" <<EOF
+# DVD光驱助手：USB/光驱设备自动识别
+SUBSYSTEM=="block", KERNEL=="sr[0-9]*", ENV{ID_CDROM}=="1", ACTION=="add|change", RUN+="${DAEMON} --udev add %k"
+SUBSYSTEM=="block", KERNEL=="sr[0-9]*", ENV{ID_CDROM}=="1", ACTION=="remove", RUN+="${DAEMON} --udev remove %k"
+EOF
+
+# 2. 生成默认配置（mount_base 留空，由守护进程探测后填充）
+mkdir -p "${TRIM_PKGETC}"
+CONF="${TRIM_PKGETC}/config.json"
+if [ ! -f "$CONF" ]; then
+    cat > "$CONF" <<JSON
+{
+    "port": 8085,
+    "mount_base": "",
+    "auto_mount": true,
+    "usb_only": true,
+    "readonly": true
+}
+JSON
+fi
+
+# 3. 重载 udev 规则并触发，立即识别已存在的光驱
+udevadm control --reload-rules 2>/dev/null || true
+udevadm trigger --subsystem-match=block --action=change 2>/dev/null || true
+
+chmod +x "$DAEMON" 2>/dev/null || true
+exit 0

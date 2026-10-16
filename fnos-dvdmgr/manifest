@@ -1,0 +1,19 @@
+appname=com.fnos.dvdmgr
+version=1.0.3
+display_name=DVD光驱助手
+desc=自动识别并管理 USB DVD/光驱设备。插入 USB 光驱并放入光盘后自动挂载（ISO9660/UDF 只读），并提供 Web 窗口管理界面，可查看光驱状态、挂载/卸载/弹出光盘、配置自动挂载。挂载的光盘内容会出现在「文件管理 → 应用文件 → DVD光驱助手」中。<br><br><strong>安装说明：</strong>本应用以 root 权限安装到系统分区，用于检测 USB 光驱热插拔、挂载光盘及发送弹出指令，属于系统级工具。<br><strong>安全提示：</strong>管理端口 8085 监听局域网，请勿在不可信网络中暴露该端口。<br><strong>作者：</strong>Kinyo · <a href="https://github.com/kisba007/fnos-dvdmgr">github.com/kisba007/fnos-dvdmgr</a>
+source=thirdparty
+platform=all
+os_min_version=1.1.3100
+maintainer=Kinyo
+maintainer_url=https://github.com/kisba007/fnos-dvdmgr
+distributor=Kinyo
+distributor_url=https://github.com/kisba007/fnos-dvdmgr
+service_port=8085
+checkport=true
+ctl_stop=true
+install_type=root
+desktop_uidir=ui
+desktop_applaunchname=com.fnos.dvdmgr.main
+disable_authorization_path=true
+changelog=1.0.3：光盘默认挂载到「我的文件」下的 dvdmgr 文件夹（打开文件管理即可见，体验类似 U 盘），不再使用系统目录。

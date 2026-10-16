@@ -1,0 +1,13 @@
+{
+    ".url": {
+        "com.fnos.dvdmgr.main": {
+            "title": "DVD光驱助手",
+            "icon": "images/icon-{0}.png",
+            "type": "iframe",
+            "protocol": "http",
+            "port": "8085",
+            "url": "/",
+            "allUsers": true
+        }
+    }
+}
